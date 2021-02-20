@@ -1,21 +1,22 @@
-/* eslint-disable no-await-in-loop */
+/* eslint-disable no-console */
+/* eslint-disable no-loop-func */
 require("dotenv").config();
 
 const axios = require("axios").default;
-
 const fs = require("fs");
-
-const path = require("path");
-
 const packageJson = require("./package.json");
+
 const baseUrl = `https://${packageJson.appInfo.loki.cloudPrefix}.saplingdata.com/${packageJson.appInfo.loki.appName}-AppBuilder/api`;
 const resourceUrl = `${baseUrl}/urn/com/loki/core/model/api/resource/v`;
 const pageFileListUrl = `${baseUrl}/urn/com/loki/core/model/api/list/v/urn/com/${packageJson.appInfo.loki.cloudName}/${packageJson.appInfo.loki.appName}/app/pages/${packageJson.appInfo.loki.pageName}?format=json`;
 const pageFileUploadUrl = `${baseUrl}/urn/com/loki/core/model/api/resource/v/urn/com/${packageJson.appInfo.loki.cloudName}/${packageJson.appInfo.loki.appName}/app/pages/${packageJson.appInfo.loki.pageName}!`;
+
 const pushToLoki = async () => {
 	const distFiles = fs.readdirSync("./dist");
+
 	distFiles.forEach((file) => {
 		const filePath = `./dist/${file}`;
+
 		fs.readFile(filePath, "utf8", (err, data) => {
 			const uploadUrl = pageFileUploadUrl + file;
 			axios
@@ -34,6 +35,7 @@ const pushToLoki = async () => {
 		});
 	});
 };
+
 function getCurrentFiles() {
 	return axios({
 		baseUrl,
@@ -49,13 +51,17 @@ function getCurrentFiles() {
 			console.error(error.response.data.errors);
 		});
 }
+
 async function deleteCurrentFiles(files) {
 	console.log(
 		`\x1b[34mDeleting ${files.length} files from the page...\x1b[89m`
 	);
-	for (var i = 0; i < files.length; i++) {
+
+	// eslint-disable-next-line no-plusplus
+	for (let i = 0; i < files.length; i++) {
 		const deleteUrl = `${resourceUrl}/${files[i].urn.replace(/[:]/g, "/")}`;
-		const deleteFile = await axios({
+		// eslint-disable-next-line no-await-in-loop
+		await axios({
 			baseUrl,
 			method: "DELETE",
 			auth: {
@@ -73,13 +79,16 @@ async function deleteCurrentFiles(files) {
 			});
 	}
 }
+
 async function clearFiles() {
 	const currentFiles = await getCurrentFiles();
 	await deleteCurrentFiles(currentFiles);
 	console.log("Finished clearing previous build!");
 }
+
 const deployApp = async () => {
 	await clearFiles();
 	pushToLoki();
 };
+
 deployApp();
